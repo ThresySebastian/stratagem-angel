@@ -1,7 +1,9 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, Truck, Users, Building2 } from "lucide-react";
+import { AuthDialog } from "@/components/AuthDialog";
+import { useAuth } from "@/hooks/useAuth";
 
 const roles = [
   {
@@ -40,6 +42,37 @@ const roles = [
 
 const Login = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user && selectedRole) {
+      const roleMap: Record<string, string> = {
+        dispatcher: '/dispatcher',
+        driver: '/driver',
+        citizen: '/citizen',
+        hospital: '/hospital',
+      };
+      navigate(roleMap[selectedRole]);
+      setSelectedRole(null);
+    }
+  }, [user, selectedRole, navigate]);
+
+  const handleRoleSelect = (roleId: string) => {
+    if (!user && !loading) {
+      setSelectedRole(roleId);
+      setAuthDialogOpen(true);
+    } else if (user) {
+      const roleMap: Record<string, string> = {
+        dispatcher: '/dispatcher',
+        driver: '/driver',
+        citizen: '/citizen',
+        hospital: '/hospital',
+      };
+      navigate(roleMap[roleId]);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -63,7 +96,7 @@ const Login = () => {
               <Card
                 key={role.id}
                 className="group cursor-pointer transition-all duration-300 hover:shadow-elevated hover:-translate-y-1 border-border bg-card"
-                onClick={() => navigate(role.path)}
+                onClick={() => handleRoleSelect(role.id)}
               >
                 <CardHeader className="space-y-4">
                   <div className={`w-16 h-16 rounded-lg ${role.gradient} flex items-center justify-center shadow-glow-primary group-hover:scale-110 transition-transform`}>
@@ -88,6 +121,8 @@ const Login = () => {
           </p>
         </div>
       </div>
+
+      <AuthDialog open={authDialogOpen} onOpenChange={setAuthDialogOpen} />
     </div>
   );
 };
